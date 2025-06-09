@@ -11,6 +11,18 @@
 
 namespace FULLFLASH {
 
+static constexpr size_t BC65_BC75_OFFSET    = 0x870;
+static constexpr size_t BC85_OFFSET         = 0xC70;
+
+static constexpr size_t X65_MODEL_OFFSET    = 0x210;
+static constexpr size_t X75_MODEL_OFFSET    = 0x210;
+static constexpr size_t X85_MODEL_OFFSET    = 0x3E000;
+
+static constexpr size_t X65_IMEI_OFFSET     = 0x65C;
+static constexpr size_t X65_7X_IMEI_OFFSET  = 0x660;
+static constexpr size_t X75_IMEI_OFFSET     = 0x660;
+static constexpr size_t X85_IMEI_OFFSET     = 0x3E410;
+
 Blocks::Blocks(std::string fullflash_path) { 
     std::ifstream file;
 
@@ -31,7 +43,7 @@ Blocks::Blocks(std::string fullflash_path) {
     switch (platform) {
         case Platform::X65:
         case Platform::X75: block_size = 0x10000; search_blocks(); break;
-        case Platform::X85: block_size = 0x20000; search_blocks_x85(); break;
+        case Platform::X85: block_size = 0x10000; search_blocks_x85(); break;
         default: throw Exception("Couldn't detect fullflash platform");
     }
 }
@@ -98,25 +110,33 @@ static bool is_empty(const char *buf, size_t size) {
 void Blocks::detect_platform() {
     std::string bc;
 
-    data.read_string(0x870, bc, 1);
+    data.read_string(BC65_BC75_OFFSET, bc, 1);
 
     if (bc == "BC65") {
         platform = Platform::X65;
 
-        data.read_string(0x65C, imei);
+        data.read_string(X65_MODEL_OFFSET, model);
+        data.read_string(X65_IMEI_OFFSET, imei);
+
+        if (imei.length() != 15) {
+            imei.clear();
+            data.read_string(X65_7X_IMEI_OFFSET, imei);
+        }
     } else if (bc == "BC75") {
         platform = Platform::X75;
 
-        data.read_string(0x660, imei);
+        data.read_string(X75_MODEL_OFFSET, model);
+        data.read_string(X75_IMEI_OFFSET, imei);
     } else {
         bc.clear();
 
-        data.read_string(0xC70, bc, 1);
+        data.read_string(BC85_OFFSET, bc, 1);
 
         if (bc == "BC85") {
             platform = Platform::X85;
 
-            data.read_string(0x3E410, imei);
+            data.read_string(X85_MODEL_OFFSET, model);
+            data.read_string(X85_IMEI_OFFSET, imei);
 
         } else {
             platform = Platform::UNK;
@@ -297,6 +317,10 @@ const Platform Blocks::get_platform() const {
 
 const std::string & Blocks::get_imei() const {
     return imei;
+}
+
+const std::string & Blocks::get_model() const {
+    return model;
 }
 
 Blocks::Map &Blocks::get_blocks() {

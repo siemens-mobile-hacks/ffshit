@@ -53,5 +53,16 @@ bool create_directory(const std::string &path, std::filesystem::perms perms) {
     return false;
 }
 
+void to_lower(std::string &str) {
+    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c){ 
+        return std::tolower(c); 
+    });
+}
+
+void to_upper(std::string &str) {
+    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c){ 
+        return std::toupper(c); 
+    });
+}
 
 };

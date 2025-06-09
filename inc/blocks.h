@@ -23,10 +23,16 @@ enum class Platform {
     X85
 };
 
-const std::unordered_map<Platform, std::string> PlatformString = {
+const std::unordered_map<Platform, std::string> PlatformToString = {
     { Platform::X65, "X65" },
     { Platform::X75, "X75" },
     { Platform::X85, "X85" },
+};
+
+const std::unordered_map<std::string, Platform> StringToPlatform = {
+    { "X65", Platform::X65 },
+    { "X75", Platform::X75 },
+    { "X85", Platform::X85 },
 };
 
 class Blocks {
@@ -46,12 +52,19 @@ class Blocks {
         } Block;
 
         using Map   = std::map<std::string, std::vector<Block>>;
+        using Ptr   = std::unique_ptr<Blocks>;
+
+        template<typename ...Args>
+        static Ptr build(Args ...args) {
+            return std::make_unique<Blocks>(args...);
+        }
 
         Blocks(std::string fullflash_path);
         Blocks(std::string fullflash_path, Platform platform);
 
         const Platform              get_platform() const;
         const std::string &         get_imei() const;
+        const std::string &         get_model() const;
 
         Map &                       get_blocks();
         RawData &                   get_data();
@@ -70,6 +83,7 @@ class Blocks {
         Map                         blocks_map;
         Platform                    platform;
         std::string                 imei;
+        std::string                 model;
 
 };
 };

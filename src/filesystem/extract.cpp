@@ -21,9 +21,8 @@ void extract(const std::string &path, std::function<void(std::string)> extractor
 
             yes_no.clear();
             std::cin >> yes_no;
-            std::transform(yes_no.begin(), yes_no.end(), yes_no.begin(), [](unsigned char c){ 
-                return std::tolower(c); 
-            });
+
+            System::to_lower(yes_no);
         }
 
         if (yes_no == "y") {
