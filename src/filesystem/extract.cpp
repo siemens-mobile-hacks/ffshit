@@ -42,7 +42,7 @@ void extract(const std::string &path, std::function<void(std::string)> extractor
         std::string yes_no;
 
         while (yes_no != "n" && yes_no != "y") {
-            spdlog::warn("Directory '{}' alreadt exists. Delete? (y/n)", path);
+            spdlog::warn("Directory '{}' already exists. Delete? (y/n)", path);
 
             yes_no.clear();
             std::cin >> yes_no;
