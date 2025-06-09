@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
 
         options.add_options()
             ("d,debug", "Enable debugging")
-            ("p,path", "Destination path. Data_<IMEI> by default", cxxopts::value<std::string>())
+            ("p,path", "Destination path. Data_<Model>_<IMEI> by default", cxxopts::value<std::string>())
             ("m,platform", "Specify platform (disable autodetect).\n[ " + supported_platforms + "]" , cxxopts::value<std::string>())
             ("ffpath", "fullflash path", cxxopts::value<std::string>())
             ("h,help", "Help");

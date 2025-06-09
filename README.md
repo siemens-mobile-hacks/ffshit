@@ -22,7 +22,9 @@ Siemens filesystem extractor
 Usage:
   ./ffshit [OPTION...] positional parameters
 
-  -d, --debug     Enable debugging
-  -p, --path arg  Destination path. Data_<Model>_<IMEI> by default
-  -h, --help      Help
+  -d, --debug         Enable debugging
+  -p, --path arg      Destination path. Data_<Model>_<IMEI> by default
+  -m, --platform arg  Specify platform (disable autodetect).
+                      [ X85 X75 X65 ]
+  -h, --help          Help
 ```
