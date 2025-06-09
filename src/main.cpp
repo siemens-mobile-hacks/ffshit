@@ -86,9 +86,8 @@ int main(int argc, char *argv[]) {
         if (override_platform.length()) {
             spdlog::warn("Manualy selected platfrom: {}", override_platform);
             
-            auto platform_type = FULLFLASH::StringToPlatform.at(override_platform);
-
-            blocks = FULLFLASH::Blocks::build(ff_path, platform_type);
+            platform    = FULLFLASH::StringToPlatform.at(override_platform);
+            blocks      = FULLFLASH::Blocks::build(ff_path, platform);
         } else {
             blocks = FULLFLASH::Blocks::build(ff_path);
 
@@ -128,8 +127,12 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        fs->load();
-        fs->extract(data_path);
+        if (fs) {
+            fs->load();
+            fs->extract(data_path);
+        } else {
+            spdlog::error("fs == nullptr o_O");
+        }
     } catch (const FULLFLASH::Exception &e) {
         spdlog::error("{}", e.what());
     } catch (const FULLFLASH::Filesystem::Exception &e) {
