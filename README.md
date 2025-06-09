@@ -23,6 +23,6 @@ Usage:
   ./ffshit [OPTION...] positional parameters
 
   -d, --debug     Enable debugging
-  -p, --path arg  Destination path. Data_<IMEI> by default
+  -p, --path arg  Destination path. Data_<Model>_<IMEI> by default
   -h, --help      Help
 ```
