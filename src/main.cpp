@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
         FULLFLASH::Blocks::Ptr  blocks;
 
         if (override_platform.length()) {
-            spdlog::warn("Manualy selected platfrom: {}", override_platform);
+            spdlog::warn("Manualy selected platform: {}", override_platform);
             
             platform    = FULLFLASH::StringToPlatform.at(override_platform);
             blocks      = FULLFLASH::Blocks::build(ff_path, platform);
