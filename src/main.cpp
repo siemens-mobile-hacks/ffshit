@@ -73,49 +73,19 @@ int main(int argc, char *argv[]) {
 
         blocks.print();
 
+        FULLFLASH::Filesystem::Base::Ptr    fs;
+
         switch(platform) {
-            case FULLFLASH::Platform::X65: {
-                auto fs_sgold = FULLFLASH::Filesystem::SGOLD::build(blocks);
-
-                fs_sgold->load();
-                fs_sgold->extract(data_path);
-
-                break;
-            }
-            case FULLFLASH::Platform::X75: {
-                auto fs_newsgold = FULLFLASH::Filesystem::NewSGOLD::build(blocks);
-
-                fs_newsgold->load();
-                fs_newsgold->extract(data_path);
-
-                break;
-            }
-            case FULLFLASH::Platform::X85: {
-                auto fs_newsgold_x85 = FULLFLASH::Filesystem::NewSGOLD_X85::build(blocks);
-
-                fs_newsgold_x85->load(); 
-                fs_newsgold_x85->extract(data_path);
-
-                break;
-            }
+            case FULLFLASH::Platform::X65: fs = FULLFLASH::Filesystem::SGOLD::build(blocks); break;
+            case FULLFLASH::Platform::X75: fs = FULLFLASH::Filesystem::NewSGOLD::build(blocks); break;
+            case FULLFLASH::Platform::X85: fs = FULLFLASH::Filesystem::NewSGOLD_X85::build(blocks); break;
             case FULLFLASH::Platform::UNK: {
                 throw FULLFLASH::Exception("Unknown platform");
             }
         }
 
-        // auto fs_sgold = FULLFLASH::Filesystem::SGOLD::build(blocks);
-
-        // fs_sgold->load();
-        // fs_sgold->extract("./Data");
-
-        // auto fs_newsgold = FULLFLASH::Filesystem::NewSGOLD::build(blocks);
-        // fs_newsgold->load();
-        // fs_newsgold->extract("./Data");
-
-        // auto fs_newsgold_x85 = FULLFLASH::Filesystem::NewSGOLD_X85::build(blocks);
-        // fs_newsgold_x85->load(); 
-        // fs_newsgold_x85->extract("./Data");
-
+        fs->load();
+        fs->extract(data_path);
     } catch (const FULLFLASH::Exception &e) {
         spdlog::error("{}", e.what());
     } catch (const FULLFLASH::Filesystem::Exception &e) {
