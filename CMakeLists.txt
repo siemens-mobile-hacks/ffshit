@@ -17,6 +17,7 @@ set(SRC_LIST
     src/system.cpp
     src/rawdata.cpp
     src/blocks.cpp 
+    src/filesystem/extract.cpp
     src/filesystem/file.cpp
     src/filesystem/directory.cpp
     src/filesystem/sgold.cpp 

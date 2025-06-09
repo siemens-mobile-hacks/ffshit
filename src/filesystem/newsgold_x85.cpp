@@ -1,5 +1,6 @@
 #include "filesystem/newsgold_x85.h"
 #include "filesystem/ex.h"
+#include "filesystem/extract.h"
 
 #include <iconv.h>
 #include <sys/stat.h>
@@ -27,33 +28,44 @@ static bool is_directory_exists(std::string path) {
 }
 
 void NewSGOLD_X85::extract(std::string path) {
-    fmt::print("Extracting filesystem\n");
+    FULLFLASH::Filesystem::extract(path, [&](std::string dst_path) {
+        for (const auto &fs : fs_map) {
+            std::string fs_name = fs.first;
+            auto root           = fs.second;
 
-    if (is_directory_exists(path)) {
-        fmt::print("Directory {} already exsits\n", path);
-        fmt::print("Deleting...\n");
+            fmt::print("Extracting {}\n", fs_name);
 
-        int r = rmdir(path.c_str());
-
-        if (r == -1) {
-            throw Exception("Couldn't delete directory '{}': {}", path, strerror(errno));
+            unpack(root, dst_path + "/" + fs_name);
         }
-    }
+    });
 
-    int r = mkdir(path.c_str(), 0755);
+    // fmt::print("Extracting filesystem\n");
 
-    if (r == -1) {
-        throw Exception("Couldn't create directory '{}': {}", path, strerror(errno));
-    }
+    // if (is_directory_exists(path)) {
+    //     fmt::print("Directory {} already exsits\n", path);
+    //     fmt::print("Deleting...\n");
 
-    for (const auto &fs : fs_map) {
-        std::string fs_name = fs.first;
-        auto root           = fs.second;
+    //     int r = rmdir(path.c_str());
 
-        fmt::print("Extracting {}\n", fs_name);
+    //     if (r == -1) {
+    //         throw Exception("Couldn't delete directory '{}': {}", path, strerror(errno));
+    //     }
+    // }
 
-        unpack(root, path + "/" + fs_name);
-    }
+    // int r = mkdir(path.c_str(), 0755);
+
+    // if (r == -1) {
+    //     throw Exception("Couldn't create directory '{}': {}", path, strerror(errno));
+    // }
+
+    // for (const auto &fs : fs_map) {
+    //     std::string fs_name = fs.first;
+    //     auto root           = fs.second;
+
+    //     fmt::print("Extracting {}\n", fs_name);
+
+    //     unpack(root, path + "/" + fs_name);
+    // }
 }
 
 void NewSGOLD_X85::print_fit_header(const NewSGOLD_X85::FITHeader &header) {

@@ -42,4 +42,16 @@ bool remove_directory(const std::filesystem::path path) {
     return std::filesystem::remove(path);
 }
 
+
+bool create_directory(const std::string &path, std::filesystem::perms perms) {
+    if (std::filesystem::create_directory(path)) {
+        std::filesystem::permissions(path, perms, std::filesystem::perm_options::replace);
+
+        return true;
+    }
+
+    return false;
+}
+
+
 };

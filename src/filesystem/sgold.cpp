@@ -1,5 +1,6 @@
 #include "filesystem/sgold.h"
 #include "filesystem/ex.h"
+#include "filesystem/extract.h"
 
 #include "help.h"
 #include <sys/stat.h>
@@ -76,22 +77,33 @@ void SGOLD::load() {
 }
 
 void SGOLD::extract(std::string path) {
-    spdlog::info("Extracting filesystem");
+    FULLFLASH::Filesystem::extract(path, [&](std::string dst_path) {
+        for (const auto &fs : fs_map) {
+            std::string fs_name = fs.first;
+            auto root           = fs.second;
 
-    int r = mkdir(path.c_str(), 0755);
+            spdlog::info("Extracting {}", fs_name);
 
-    if (r == -1) {
-        throw Exception("Couldn't create directory '{}': {}", path, strerror(errno));
-    }
+            unpack(root, dst_path + "/" + fs_name);
+        };
+    });
 
-    for (const auto &fs : fs_map) {
-        std::string fs_name = fs.first;
-        auto root           = fs.second;
+    // spdlog::info("Extracting filesystem");
 
-        spdlog::info("Extracting {}", fs_name);
+    // int r = mkdir(path.c_str(), 0755);
 
-        unpack(root, path + "/" + fs_name);
-    }
+    // if (r == -1) {
+    //     throw Exception("Couldn't create directory '{}': {}", path, strerror(errno));
+    // }
+
+    // for (const auto &fs : fs_map) {
+    //     std::string fs_name = fs.first;
+    //     auto root           = fs.second;
+
+    //     spdlog::info("Extracting {}", fs_name);
+
+    //     unpack(root, path + "/" + fs_name);
+    // }
 }
 
 void SGOLD::print_fit_header(const SGOLD::FITHeader &header) {

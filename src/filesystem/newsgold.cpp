@@ -1,5 +1,6 @@
 #include "filesystem/newsgold.h"
 #include "filesystem/ex.h"
+#include "filesystem/extract.h"
 
 #include "help.h"
 #include "system.h"
@@ -10,8 +11,6 @@
 #include <spdlog/spdlog.h>
 
 #include <iconv.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
 namespace FULLFLASH {
 namespace Filesystem {
@@ -23,71 +22,82 @@ void NewSGOLD::load() {
 }
 
 void NewSGOLD::extract(std::string path) {
-    spdlog::info("Extracting filesystem");
+    FULLFLASH::Filesystem::extract(path, [&](std::string dst_path) {
+        for (const auto &fs : fs_map) {
+            std::string fs_name = fs.first;
+            auto root           = fs.second;
 
-    if (System::is_file_exists(path)) {
-        std::string yes_no;
+            spdlog::info("Extracting {}", fs_name);
 
-        while (yes_no != "n" && yes_no != "y") {
-            spdlog::warn("'{}' is regular file. Delete? (y/n)", path);
+            unpack(root, dst_path + "/" + fs_name);
+        };
+    });
 
-            yes_no.clear();
-            std::cin >> yes_no;
-            std::transform(yes_no.begin(), yes_no.end(), yes_no.begin(), [](unsigned char c){ 
-                return std::tolower(c); 
-            });
-        }
+    // spdlog::info("Extracting filesystem");
 
-        if (yes_no == "y") {
-            bool r = System::remove_directory(path);
+    // if (System::is_file_exists(path)) {
+    //     std::string yes_no;
 
-            if (!r) {
-                throw Exception("Couldn't delete directory '{}': {}", path, strerror(errno));
-            }
-        } else {
-            return;
-        }
+    //     while (yes_no != "n" && yes_no != "y") {
+    //         spdlog::warn("'{}' is regular file. Delete? (y/n)", path);
 
-    }
+    //         yes_no.clear();
+    //         std::cin >> yes_no;
+    //         std::transform(yes_no.begin(), yes_no.end(), yes_no.begin(), [](unsigned char c){ 
+    //             return std::tolower(c); 
+    //         });
+    //     }
 
-    if (System::is_directory_exists(path)) {
-        std::string yes_no;
+    //     if (yes_no == "y") {
+    //         bool r = System::remove_directory(path);
 
-        while (yes_no != "n" && yes_no != "y") {
-            spdlog::warn("Directory '{}' alreadt exists. Delete? (y/n)", path);
+    //         if (!r) {
+    //             throw Exception("Couldn't delete directory '{}': {}", path, strerror(errno));
+    //         }
+    //     } else {
+    //         return;
+    //     }
 
-            yes_no.clear();
-            std::cin >> yes_no;
-            std::transform(yes_no.begin(), yes_no.end(), yes_no.begin(), [](unsigned char c){ 
-                return std::tolower(c); 
-            });
-        }
+    // }
 
-        if (yes_no == "y") {
-            bool r = System::remove_directory(path);
+    // if (System::is_directory_exists(path)) {
+    //     std::string yes_no;
 
-            if (!r) {
-                throw Exception("Couldn't delete directory '{}': {}", path, strerror(errno));
-            }
-        } else {
-            return;
-        }
-    }
+    //     while (yes_no != "n" && yes_no != "y") {
+    //         spdlog::warn("Directory '{}' alreadt exists. Delete? (y/n)", path);
 
-    int r = mkdir(path.c_str(), 0755);
+    //         yes_no.clear();
+    //         std::cin >> yes_no;
+    //         std::transform(yes_no.begin(), yes_no.end(), yes_no.begin(), [](unsigned char c){ 
+    //             return std::tolower(c); 
+    //         });
+    //     }
 
-    if (r == -1) {
-        throw Exception("Couldn't create directory '{}': {}", path, strerror(errno));
-    }
+    //     if (yes_no == "y") {
+    //         bool r = System::remove_directory(path);
 
-    for (const auto &fs : fs_map) {
-        std::string fs_name = fs.first;
-        auto root           = fs.second;
+    //         if (!r) {
+    //             throw Exception("Couldn't delete directory '{}': {}", path, strerror(errno));
+    //         }
+    //     } else {
+    //         return;
+    //     }
+    // }
 
-        spdlog::info("Extracting {}", fs_name);
+    // int r = mkdir(path.c_str(), 0755);
 
-        unpack(root, path + "/" + fs_name);
-    }
+    // if (r == -1) {
+    //     throw Exception("Couldn't create directory '{}': {}", path, strerror(errno));
+    // }
+
+    // for (const auto &fs : fs_map) {
+    //     std::string fs_name = fs.first;
+    //     auto root           = fs.second;
+
+    //     spdlog::info("Extracting {}", fs_name);
+
+    //     unpack(root, path + "/" + fs_name);
+    // }
 }
 
 void NewSGOLD::print_fit_header(const NewSGOLD::FITHeader &header) {
@@ -403,10 +413,13 @@ void NewSGOLD::scan(FSBlocksMap &ffs_map, Directory::Ptr dir, const FileHeader &
 }
 
 void NewSGOLD::unpack(Directory::Ptr dir, std::string path) {
-    int r = mkdir(path.c_str(), 0755);
+    bool r = System::create_directory(path, 
+                        std::filesystem::perms::owner_read | std::filesystem::perms::owner_write | std::filesystem::perms::owner_exec |
+                        std::filesystem::perms::group_read | std::filesystem::perms::group_exec |
+                        std::filesystem::perms::others_read | std::filesystem::perms::others_exec);
 
-    if (r == -1) {
-        throw Exception("Couldn't create directory '{}': {}", path, strerror(errno));
+    if (!r) {
+        throw Exception("Couldn't create directory '{}'", path);
     }
 
     const auto &subdirs = dir->get_subdirs();
