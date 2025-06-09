@@ -284,9 +284,6 @@ void SGOLD::scan(FSBlocksMap &ffs_map, Directory::Ptr dir, const FileHeader &hea
             continue;
         }
 
-        // spdlog::info("  {:5d}: ", id);
-        // spdlog::info("  {}", path);
-
         if (ffs_map.count(id)) {
             const FFSBlock &tmp     = ffs_map.at(id);
             FileHeader      title   = read_file_header(tmp.data);
