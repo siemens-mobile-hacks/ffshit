@@ -95,36 +95,36 @@ void SGOLD::extract(std::string path) {
 }
 
 void SGOLD::print_fit_header(const SGOLD::FITHeader &header) {
-    spdlog::info("FIT:");
-    spdlog::info("Flags:  {:08X}",  header.flags);
-    spdlog::info("ID:     {:d}",    header.id);
-    spdlog::info("Size:   {:d}",    header.size);
-    spdlog::info("Offset: {:08X}",  header.offset);
-    spdlog::info("===========================");
+    spdlog::debug("FIT:");
+    spdlog::debug("Flags:  {:08X}",  header.flags);
+    spdlog::debug("ID:     {:d}",    header.id);
+    spdlog::debug("Size:   {:d}",    header.size);
+    spdlog::debug("Offset: {:08X}",  header.offset);
+    spdlog::debug("===========================");
 }
 
 void SGOLD::print_file_header(const SGOLD::FileHeader &header) {
-    spdlog::info("File:");
-    spdlog::info("ID:           {}",      header.id);
-    spdlog::info("Parent ID:    {}",      header.parent_id);
-    spdlog::info("Unknown:      {:04X}",  header.unknown);
-    spdlog::info("Data ID:      {}",      header.data_id);
-    spdlog::info("Attributes:   {:04X}",  header.attributes);
-    spdlog::info("Next part ID: {}",      header.next_part);
-    spdlog::info("Name:         {}",      header.name);
-    spdlog::info("===========================");
+    spdlog::debug("File:");
+    spdlog::debug("ID:           {}",      header.id);
+    spdlog::debug("Parent ID:    {}",      header.parent_id);
+    spdlog::debug("Unknown:      {:04X}",  header.unknown);
+    spdlog::debug("Data ID:      {}",      header.data_id);
+    spdlog::debug("Attributes:   {:04X}",  header.attributes);
+    spdlog::debug("Next part ID: {}",      header.next_part);
+    spdlog::debug("Name:         {}",      header.name);
+    spdlog::debug("===========================");
 }
 
 void SGOLD::print_file_part(const SGOLD::FilePart &part) {
-    spdlog::info("File part:");
-    spdlog::info("ID:           {}",      part.id);
-    spdlog::info("Parent ID:    {}",      part.parent_id);
-    spdlog::info("Unknown:      {:04X}",  part.unknown);
-    spdlog::info("Data ID:      {}",      part.data_id);
-    spdlog::info("Unknown2:     {:04X}",  part.unknown2);
-    spdlog::info("Prev ID:      {}",      part.prev_id);
-    spdlog::info("Next part ID: {}",      part.next_part);
-    spdlog::info("===========================");
+    spdlog::debug("File part:");
+    spdlog::debug("ID:           {}",      part.id);
+    spdlog::debug("Parent ID:    {}",      part.parent_id);
+    spdlog::debug("Unknown:      {:04X}",  part.unknown);
+    spdlog::debug("Data ID:      {}",      part.data_id);
+    spdlog::debug("Unknown2:     {:04X}",  part.unknown2);
+    spdlog::debug("Prev ID:      {}",      part.prev_id);
+    spdlog::debug("Next part ID: {}",      part.next_part);
+    spdlog::debug("===========================");
 }
 
 SGOLD::FileHeader SGOLD::read_file_header(const RawData &data) {
@@ -189,11 +189,11 @@ void SGOLD::parse_FIT() {
                 block_data.read<uint32_t>(offset_header, reinterpret_cast<char *>(&fs_block.header.size), 1);
                 block_data.read<uint32_t>(offset_header, reinterpret_cast<char *>(&fs_block.header.offset), 1);
 
-                spdlog::info("    ==== Offset: {:08X} ====", block.offset + offset);
-                spdlog::info("    ID:     {:08X}", fs_block.header.id);
-                spdlog::info("    Size:   {:08X} {}", fs_block.header.size, fs_block.header.size);
-                spdlog::info("    Offset: {:08X}", fs_block.header.offset);
-                spdlog::info("    Flags:  {:08X}", fs_block.header.flags);
+                spdlog::debug("    ==== Offset: {:08X} ====", block.offset + offset);
+                spdlog::debug("    ID:     {:08X}", fs_block.header.id);
+                spdlog::debug("    Size:   {:08X} {}", fs_block.header.size, fs_block.header.size);
+                spdlog::debug("    Offset: {:08X}", fs_block.header.offset);
+                spdlog::debug("    Flags:  {:08X}", fs_block.header.flags);
 
                 if (fs_block.header.flags == 0xFFFFFFFF) {
                     break;
@@ -284,14 +284,14 @@ void SGOLD::scan(FSBlocksMap &ffs_map, Directory::Ptr dir, const FileHeader &hea
             continue;
         }
 
-        spdlog::info("  {:5d}: ", id);
-        spdlog::info("  {}", path);
+        // spdlog::info("  {:5d}: ", id);
+        // spdlog::info("  {}", path);
 
         if (ffs_map.count(id)) {
             const FFSBlock &tmp     = ffs_map.at(id);
             FileHeader      title   = read_file_header(tmp.data);
 
-            spdlog::info("{}", title.name);
+            spdlog::info("{:5d}: {}{}", id, path, title.name);
 
             if (title.attributes & 0x10) {
                 Directory::Ptr dir_next = Directory::build(title.name);
