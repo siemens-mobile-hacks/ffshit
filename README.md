@@ -17,7 +17,7 @@
 ### Параметры:
 
 ```
-> ./ffshit -h                                                                                                                                                                                      (main|✔) 20:11
+> ./ffshit -h
 Siemens filesystem extractor
 Usage:
   ./ffshit [OPTION...] positional parameters
