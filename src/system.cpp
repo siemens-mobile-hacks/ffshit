@@ -1,5 +1,7 @@
 #include "system.h"
 
+#include <algorithm>
+
 namespace System {
 
 bool is_file_exists(const std::string &path) {
