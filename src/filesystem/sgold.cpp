@@ -246,6 +246,10 @@ void SGOLD::parse_FIT() {
             }
         }
 
+        if (!ffs_map.count(6)) {
+            throw Exception("Root block (ID: 6) not found. Broken filesystem?");
+        }
+
         const FFSBlock &    root_block      = ffs_map.at(6);
         FileHeader          root_header     = read_file_header(root_block.data);
         Directory::Ptr      root            = Directory::build(root_header.name);
@@ -312,32 +316,34 @@ void SGOLD::scan(const std::string &block_name, FSBlocksMap &ffs_map, Directory:
             continue;
         }
 
-        if (ffs_map.count(id)) {
-            const FFSBlock &tmp     = ffs_map.at(id);
-            FileHeader      title   = read_file_header(tmp.data);
+        if (!ffs_map.count(id)) {
+            throw Exception("FFS Block ID: {} not found", id);
+        }
 
-            spdlog::info("Found ID: {:5d}, Path: {}{}{}", id, block_name, path, title.name);
+        const FFSBlock &tmp     = ffs_map.at(id);
+        FileHeader      title   = read_file_header(tmp.data);
 
-            if (title.attributes & 0x10) {
-                Directory::Ptr dir_next = Directory::build(title.name);
+        spdlog::info("Found ID: {:5d}, Path: {}{}{}", id, block_name, path, title.name);
 
-                dir->add_subdir(dir_next);
+        if (title.attributes & 0x10) {
+            Directory::Ptr dir_next = Directory::build(title.name);
 
-                scan(block_name, ffs_map, dir_next, title, path + title.name + "/");
-            } else {
-                try {
-                    RawData file_data;
+            dir->add_subdir(dir_next);
 
-                    if (ffs_map.count(title.data_id)) {
-                        file_data = read_full_data(ffs_map, title);
-                    }
-                
-                    File::Ptr file = File::build(title.name, file_data);
+            scan(block_name, ffs_map, dir_next, title, path + title.name + "/");
+        } else {
+            try {
+                RawData file_data;
 
-                    dir->add_file(file);
-                } catch (const Exception &e) {
-                    spdlog::warn("Warning! Broken file: {}", e.what());
+                if (ffs_map.count(title.data_id)) {
+                    file_data = read_full_data(ffs_map, title);
                 }
+            
+                File::Ptr file = File::build(title.name, file_data);
+
+                dir->add_file(file);
+            } catch (const Exception &e) {
+                spdlog::warn("Warning! Broken file: {}", e.what());
             }
         }
     }
