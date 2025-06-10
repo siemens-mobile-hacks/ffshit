@@ -107,15 +107,16 @@ void SGOLD::extract(std::string path) {
 }
 
 void SGOLD::print_fit_header(const SGOLD::FITHeader &header) {
+    spdlog::debug("===========================");
     spdlog::debug("FIT:");
     spdlog::debug("Flags:  {:08X}",  header.flags);
     spdlog::debug("ID:     {:d}",    header.id);
     spdlog::debug("Size:   {:d}",    header.size);
     spdlog::debug("Offset: {:08X}",  header.offset);
-    spdlog::debug("===========================");
 }
 
 void SGOLD::print_file_header(const SGOLD::FileHeader &header) {
+    spdlog::debug("===========================");
     spdlog::debug("File:");
     spdlog::debug("ID:           {}",      header.id);
     spdlog::debug("Parent ID:    {}",      header.parent_id);
@@ -124,10 +125,10 @@ void SGOLD::print_file_header(const SGOLD::FileHeader &header) {
     spdlog::debug("Attributes:   {:04X}",  header.attributes);
     spdlog::debug("Next part ID: {}",      header.next_part);
     spdlog::debug("Name:         {}",      header.name);
-    spdlog::debug("===========================");
 }
 
 void SGOLD::print_file_part(const SGOLD::FilePart &part) {
+    spdlog::debug("===========================");
     spdlog::debug("File part:");
     spdlog::debug("ID:           {}",      part.id);
     spdlog::debug("Parent ID:    {}",      part.parent_id);
@@ -136,7 +137,6 @@ void SGOLD::print_file_part(const SGOLD::FilePart &part) {
     spdlog::debug("Unknown2:     {:04X}",  part.unknown2);
     spdlog::debug("Prev ID:      {}",      part.prev_id);
     spdlog::debug("Next part ID: {}",      part.next_part);
-    spdlog::debug("===========================");
 }
 
 SGOLD::FileHeader SGOLD::read_file_header(const RawData &data) {
@@ -178,7 +178,7 @@ void SGOLD::parse_FIT() {
         FSBlocksMap ffs_map;
 
         if (ffs_block_name.find("FFS") != std::string::npos) {
-            spdlog::info("{} Blocks:", ffs_block_name, ffs.size());
+            spdlog::debug("{} Blocks:", ffs_block_name, ffs.size());
         } else {
             continue;
         }
@@ -187,7 +187,7 @@ void SGOLD::parse_FIT() {
 
         size_t max_block = 0;
         for (auto &block : ffs) {
-            spdlog::info("  Block {:08X} Size: {}", block.offset, block.data.get_size());
+            spdlog::debug("  Block {:08X} Size: {}", block.offset, block.data.get_size());
 
             const RawData & block_data = block.data;
             size_t          block_size = block_data.get_size();
@@ -201,11 +201,11 @@ void SGOLD::parse_FIT() {
                 block_data.read<uint32_t>(offset_header, reinterpret_cast<char *>(&fs_block.header.size), 1);
                 block_data.read<uint32_t>(offset_header, reinterpret_cast<char *>(&fs_block.header.offset), 1);
 
-                spdlog::debug("    ==== Offset: {:08X} ====", block.offset + offset);
-                spdlog::debug("    ID:     {:08X}", fs_block.header.id);
-                spdlog::debug("    Size:   {:08X} {}", fs_block.header.size, fs_block.header.size);
-                spdlog::debug("    Offset: {:08X}", fs_block.header.offset);
-                spdlog::debug("    Flags:  {:08X}", fs_block.header.flags);
+                // spdlog::debug("    ==== Offset: {:08X} ====", block.offset + offset);
+                // spdlog::debug("    ID:     {:08X}", fs_block.header.id);
+                // spdlog::debug("    Size:   {:08X} {}", fs_block.header.size, fs_block.header.size);
+                // spdlog::debug("    Offset: {:08X}", fs_block.header.offset);
+                // spdlog::debug("    Flags:  {:08X}", fs_block.header.flags);
 
                 if (fs_block.header.flags == 0xFFFFFFFF) {
                     break;
@@ -213,6 +213,22 @@ void SGOLD::parse_FIT() {
 
                 if (fs_block.header.flags == 0xFFFFFF00) {
                     continue;
+                }
+
+                print_fit_header(fs_block.header);
+
+                std::string data_print;
+
+                for (size_t i = 0; i < 16; ++i) {
+                    char *c = block_data.get_data().get() + offset + i;
+                    
+                    data_print += fmt::format("{:02X} ", (unsigned char) *c);
+
+                    if ((i + 1) % 4 == 0) {
+                        spdlog::debug(data_print);
+
+                        data_print.clear();
+                    }
                 }
 
                 // fs_block.data = RawData(block_data_ptr + fs_block.header.offset, fs_block.header.size);
@@ -234,7 +250,7 @@ void SGOLD::parse_FIT() {
         FileHeader          root_header     = read_file_header(root_block.data);
         Directory::Ptr      root            = Directory::build(root_header.name);
 
-        scan(ffs_map, root, root_header);
+        scan(ffs_block_name, ffs_map, root, root_header);
 
         fs_map[ffs_block_name] = root;
     }
@@ -258,7 +274,7 @@ void SGOLD::unpack(Directory::Ptr dir, std::string path) {
         std::string     file_path = path + "/" + file->get_name();
         std::ofstream   file_stream;
 
-        spdlog::info("  {}", file_path);
+        spdlog::info("  Extracting {}", file_path);
 
         file_stream.open(file_path, std::ios_base::binary | std::ios_base::trunc);
 
@@ -276,7 +292,7 @@ void SGOLD::unpack(Directory::Ptr dir, std::string path) {
     }
 }
 
-void SGOLD::scan(FSBlocksMap &ffs_map, Directory::Ptr dir, const FileHeader &header, std::string path) {
+void SGOLD::scan(const std::string &block_name, FSBlocksMap &ffs_map, Directory::Ptr dir, const FileHeader &header, std::string path) {
     RawData data    = read_full_data(ffs_map, header);
     size_t  offset  = 0;
 
@@ -300,14 +316,14 @@ void SGOLD::scan(FSBlocksMap &ffs_map, Directory::Ptr dir, const FileHeader &hea
             const FFSBlock &tmp     = ffs_map.at(id);
             FileHeader      title   = read_file_header(tmp.data);
 
-            spdlog::info("{:5d}: {}{}", id, path, title.name);
+            spdlog::info("Found ID: {:5d}, Path: {}{}{}", id, block_name, path, title.name);
 
             if (title.attributes & 0x10) {
                 Directory::Ptr dir_next = Directory::build(title.name);
 
                 dir->add_subdir(dir_next);
 
-                scan(ffs_map, dir_next, title, path + title.name + "/");
+                scan(block_name, ffs_map, dir_next, title, path + title.name + "/");
             } else {
                 try {
                     RawData file_data;
@@ -336,6 +352,8 @@ void SGOLD::read_recurse(FSBlocksMap &ffs_map, RawData &data, uint16_t next_id) 
 
     FilePart        part       = read_file_part(block.data);
 
+    print_file_part(part);
+
     if (!ffs_map.count(part.data_id)) {
         throw Exception("Reading part data. Couldn't find block with id: {}", part.data_id);
     }
@@ -350,6 +368,8 @@ void SGOLD::read_recurse(FSBlocksMap &ffs_map, RawData &data, uint16_t next_id) 
 }
 
 RawData SGOLD::read_full_data(FSBlocksMap &ffs_map, const FileHeader &header) {
+    print_file_header(header);
+
     if (!ffs_map.count(header.data_id)) {
         throw Exception("Reading file data. Couldn't find block with id: {}", header.data_id);
     }

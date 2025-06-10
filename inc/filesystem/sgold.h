@@ -62,7 +62,8 @@ class SGOLD : public Base {
         FSMap                       fs_map;
 
         void                        parse_FIT();
-        void                        scan(FSBlocksMap &ffs_map, Directory::Ptr dir, const FileHeader &header, std::string path = "/");
+
+        void                        scan(const std::string &block_name, FSBlocksMap &ffs_map, Directory::Ptr dir, const FileHeader &header, std::string path = "/");
         void                        read_recurse(FSBlocksMap &ffs_map, RawData &data, uint16_t next_id);
         RawData                     read_full_data(FSBlocksMap &ffs_map, const FileHeader &header);
 
