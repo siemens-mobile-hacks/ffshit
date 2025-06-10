@@ -241,6 +241,10 @@ void NewSGOLD::parse_FIT() {
 
         // const FFSBlock &    root_block      = ffs_map.at(3686);
 
+        if (!ffs_map.count(10)) {
+            throw Exception("Root block (ID: 10) not found. Broken filesystem?");
+        }
+
         const FFSBlock &    root_block      = ffs_map.at(10);
         FileHeader          root_header     = read_file_header(root_block.data);
         Directory::Ptr      root            = Directory::build(root_header.name);
@@ -316,6 +320,10 @@ void NewSGOLD::scan(const std::string &block_name, FSBlocksMap &ffs_map, Directo
         
         if (id == 0) {
             continue;
+        }
+
+        if (!ffs_map.count(id)) {
+            throw Exception("FFS Block ID: {} not found", id);
         }
 
         const FFSBlock &    file_block      = ffs_map.at(id);
