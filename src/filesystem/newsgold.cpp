@@ -32,84 +32,19 @@ void NewSGOLD::extract(std::string path) {
             unpack(root, dst_path + "/" + fs_name);
         };
     });
-
-    // spdlog::info("Extracting filesystem");
-
-    // if (System::is_file_exists(path)) {
-    //     std::string yes_no;
-
-    //     while (yes_no != "n" && yes_no != "y") {
-    //         spdlog::warn("'{}' is regular file. Delete? (y/n)", path);
-
-    //         yes_no.clear();
-    //         std::cin >> yes_no;
-    //         std::transform(yes_no.begin(), yes_no.end(), yes_no.begin(), [](unsigned char c){ 
-    //             return std::tolower(c); 
-    //         });
-    //     }
-
-    //     if (yes_no == "y") {
-    //         bool r = System::remove_directory(path);
-
-    //         if (!r) {
-    //             throw Exception("Couldn't delete directory '{}': {}", path, strerror(errno));
-    //         }
-    //     } else {
-    //         return;
-    //     }
-
-    // }
-
-    // if (System::is_directory_exists(path)) {
-    //     std::string yes_no;
-
-    //     while (yes_no != "n" && yes_no != "y") {
-    //         spdlog::warn("Directory '{}' alreadt exists. Delete? (y/n)", path);
-
-    //         yes_no.clear();
-    //         std::cin >> yes_no;
-    //         std::transform(yes_no.begin(), yes_no.end(), yes_no.begin(), [](unsigned char c){ 
-    //             return std::tolower(c); 
-    //         });
-    //     }
-
-    //     if (yes_no == "y") {
-    //         bool r = System::remove_directory(path);
-
-    //         if (!r) {
-    //             throw Exception("Couldn't delete directory '{}': {}", path, strerror(errno));
-    //         }
-    //     } else {
-    //         return;
-    //     }
-    // }
-
-    // int r = mkdir(path.c_str(), 0755);
-
-    // if (r == -1) {
-    //     throw Exception("Couldn't create directory '{}': {}", path, strerror(errno));
-    // }
-
-    // for (const auto &fs : fs_map) {
-    //     std::string fs_name = fs.first;
-    //     auto root           = fs.second;
-
-    //     spdlog::info("Extracting {}", fs_name);
-
-    //     unpack(root, path + "/" + fs_name);
-    // }
 }
 
 void NewSGOLD::print_fit_header(const NewSGOLD::FITHeader &header) {
+    spdlog::debug("===========================");
     spdlog::debug("FIT:");
     spdlog::debug("Flags:      {:08X}",  header.flags);
     spdlog::debug("ID:         {:d}",    header.id);
     spdlog::debug("Size:       {:d}",    header.size);
     spdlog::debug("Offset:     {:04X}",  header.offset);
-    spdlog::debug("===========================");
 }
 
 void NewSGOLD::print_file_header(const NewSGOLD::FileHeader &header) {
+    spdlog::debug("===========================");
     spdlog::debug("File:");
     spdlog::debug("ID:           {}",      header.id);
     spdlog::debug("Parent ID:    {}",      header.parent_id);
@@ -121,15 +56,14 @@ void NewSGOLD::print_file_header(const NewSGOLD::FileHeader &header) {
     spdlog::debug("Unknown6:     {:04X} {}",      header.unknown6, header.unknown6);
     spdlog::debug("Unknown7:     {:04X} {}",      header.unknown7, header.unknown7);
     spdlog::debug("Name:         {}",      header.name);
-    spdlog::debug("===========================");
 }
 
 void NewSGOLD::print_file_part(const FilePart &part) {
+    spdlog::debug("===========================");
     spdlog::debug("Part:");
     spdlog::debug("ID:             {}", part.id);
     spdlog::debug("Parent ID:      {}", part.parent_id);
     spdlog::debug("Next part ID:   {}", part.next_part);
-    spdlog::debug("===========================");
 }
 
 NewSGOLD::FileHeader NewSGOLD::read_file_header(const RawData &data) {
@@ -208,13 +142,13 @@ void NewSGOLD::parse_FIT() {
         FSBlocksMap ffs_map;
 
         if (ffs_block_name.find("FFS") != std::string::npos) {
-            spdlog::info("{} Blocks: {}", ffs_block_name, ffs.size());
+            spdlog::debug("{} Blocks: {}", ffs_block_name, ffs.size());
         } else {
             continue;
         }
 
         for (auto &block : ffs) {
-            spdlog::info("  Block {:08X} Size: {}", block.offset, block.data.get_size());
+            spdlog::debug("  Block {:08X} Size: {}", block.offset, block.data.get_size());
 
             const RawData & block_data = block.data;
             size_t          block_size = block_data.get_size();
@@ -235,9 +169,8 @@ void NewSGOLD::parse_FIT() {
                 if (fs_block.header.flags == 0xFFFFFF00) {
                     continue;
                 }
-
+                
                 print_fit_header(fs_block.header);
-
 
                 std::string data_print;
 
@@ -258,8 +191,6 @@ void NewSGOLD::parse_FIT() {
                 if (ffs_map.count(fs_block.header.id)) {
                     throw Exception("Duplicate id {}", fs_block.header.id);
                 }
-
-
 
                 ffs_map[fs_block.header.id] = fs_block;
 
@@ -309,11 +240,12 @@ void NewSGOLD::parse_FIT() {
         // print_file_header(root_header);
 
         // const FFSBlock &    root_block      = ffs_map.at(3686);
+
         const FFSBlock &    root_block      = ffs_map.at(10);
         FileHeader          root_header     = read_file_header(root_block.data);
         Directory::Ptr      root            = Directory::build(root_header.name);
 
-        scan(ffs_map, root, root_header);
+        scan(ffs_block_name, ffs_map, root, root_header);
 
         fs_map[ffs_block_name] = root;
     }
@@ -327,6 +259,8 @@ void NewSGOLD::read_recurse(FSBlocksMap &ffs_map, RawData &data, uint16_t next_i
     const FFSBlock &block      = ffs_map.at(next_id);
     FilePart        part       = read_file_part(block.data);
     uint16_t        data_id    = part.id + 1;
+
+    print_file_part(part);
 
     if (!ffs_map.count(data_id)) {
         throw Exception("Reading part data. Couldn't find block with id: {}", data_id);
@@ -342,6 +276,8 @@ void NewSGOLD::read_recurse(FSBlocksMap &ffs_map, RawData &data, uint16_t next_i
 }
 
 RawData NewSGOLD::read_full_data(FSBlocksMap &ffs_map, const FileHeader &header) {
+    print_file_header(header);
+
     uint32_t data_id = header.id + 1;
 
     if (!ffs_map.count(data_id)) {
@@ -359,7 +295,7 @@ RawData NewSGOLD::read_full_data(FSBlocksMap &ffs_map, const FileHeader &header)
     return data_full;
 }
 
-void NewSGOLD::scan(FSBlocksMap &ffs_map, Directory::Ptr dir, const FileHeader &header, std::string path) {
+void NewSGOLD::scan(const std::string &block_name, FSBlocksMap &ffs_map, Directory::Ptr dir, const FileHeader &header, std::string path) {
     RawData data    = read_full_data(ffs_map, header);
     size_t  offset  = 0;
 
@@ -385,14 +321,14 @@ void NewSGOLD::scan(FSBlocksMap &ffs_map, Directory::Ptr dir, const FileHeader &
         const FFSBlock &    file_block      = ffs_map.at(id);
         FileHeader          file_header     = read_file_header(file_block.data);
         
-        spdlog::info("{:5d} {}", id, path + file_header.name);
+        spdlog::info("Found ID: {:5d}, Path: {}{}", id, block_name, path + file_header.name);
 
         if (file_header.unknown6 & 0x10) {
             Directory::Ptr dir_next = Directory::build(file_header.name);
 
             dir->add_subdir(dir_next);
 
-            scan(ffs_map, dir_next, file_header, path + file_header.name + "/");
+            scan(block_name, ffs_map, dir_next, file_header, path + file_header.name + "/");
         } else {
             try {
                 RawData     file_data;
@@ -433,7 +369,7 @@ void NewSGOLD::unpack(Directory::Ptr dir, std::string path) {
         std::string     file_path = path + "/" + file->get_name();
         std::ofstream   file_stream;
 
-        spdlog::info("  {}", file_path);
+        spdlog::info("  Extracting {}", file_path);
 
         file_stream.open(file_path, std::ios_base::binary | std::ios_base::trunc);
 

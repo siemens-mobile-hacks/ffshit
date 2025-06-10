@@ -19,6 +19,7 @@ int main(int argc, char *argv[]) {
     std::string ff_path;
     std::string override_dst_path;
     std::string override_platform;
+    bool        is_debug = false;
 
     try {
         std::string supported_platforms;
@@ -51,7 +52,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (parsed.count("d")) {
-            spdlog::set_level(spdlog::level::debug);
+            is_debug = true;
         }
 
         if (parsed.count("m")) {
@@ -75,7 +76,11 @@ int main(int argc, char *argv[]) {
     } catch (const cxxopts::exceptions::exception &e) {
         spdlog::error("{}", e.what());
     }
-       
+
+    if (is_debug) {
+        spdlog::set_level(spdlog::level::debug);
+    }
+
     try {
         FULLFLASH::Platform     platform;
         std::string             imei;
@@ -114,7 +119,9 @@ int main(int argc, char *argv[]) {
             data_path = override_dst_path;
         }
 
-        blocks->print();
+        if (is_debug) {
+            blocks->print();
+        }
 
         FULLFLASH::Filesystem::Base::Ptr    fs;
 
@@ -130,6 +137,7 @@ int main(int argc, char *argv[]) {
         if (fs) {
             fs->load();
             fs->extract(data_path);
+            spdlog::info("Done");
         } else {
             spdlog::error("fs == nullptr o_O");
         }

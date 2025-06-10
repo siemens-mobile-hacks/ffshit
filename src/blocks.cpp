@@ -303,10 +303,10 @@ void Blocks::search_blocks_x85() {
 
 void Blocks::print() {
     for (const auto &pair : blocks_map) {
-        spdlog::info("{} Count: {}:", pair.first, pair.second.size());
+        spdlog::debug("{} Count: {}:", pair.first, pair.second.size());
 
         for (const auto &block : pair.second) {
-            spdlog::info("  0x{:08X}: {}, Size: {}", block.offset, block.header.name, block.data.get_size());
+            spdlog::debug("  0x{:08X}: {}, Size: {}", block.offset, block.header.name, block.data.get_size());
         }
     }
 }

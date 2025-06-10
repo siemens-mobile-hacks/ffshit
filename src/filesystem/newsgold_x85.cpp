@@ -154,7 +154,7 @@ NewSGOLD_X85::FileHeader NewSGOLD_X85::read_file_header(const FFSBlock &block) {
 
     header_data.read<char>(offset, from, from_n);
 
-    iconv_t iccd = iconv_open("utf8", "utf16");
+    iconv_t iccd = iconv_open("UTF-8", "UTF-16LE");
 
     if (iccd == ((iconv_t)-1)) {
         throw Exception("iconv_open(): {}", strerror(errno));
